@@ -6,7 +6,8 @@ AC_INIT(ipsec-tools, 0.8.2)
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADERS(config.h)
 
-AM_INIT_AUTOMAKE(dist-bzip2)
+AC_CONFIG_MACRO_DIR([.])
+AM_INIT_AUTOMAKE([dist-bzip2 foreign serial-tests])
 
 AC_ENABLE_SHARED(no)
 
@@ -32,6 +33,9 @@ case $host in
 	AC_SUBST(INSTALL_OPTS)
 	AC_SUBST(INCLUDE_GLIBC)
 	AC_SUBST(RPM)
+	;;
+*kfreebsd*)
+	LIBS="$LIBS -lresolv"
 	;;
 *darwin*)
 	LIBS="$LIBS -lresolv"
@@ -93,6 +97,10 @@ case "$host_os" in
     CPPFLAGS="$GLIBC_BUGS_LOCAL $CPPFLAGS"
     CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
     AC_SUBST(GLIBC_BUGS)
+    ;;
+ *kfreebsd*)
+    # Define _GNU_SOURCE as this is a glibc platform (and in6_pktinfo is hidden behind that define)
+    CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
     ;;
  *)
     if test "$have_net_pfkey$have_netinet_ipsec" != yesyes; then
@@ -314,7 +322,7 @@ if test "$libiconv_dir" != "no"; then
 			AC_MSG_ERROR([ICONV libs or includes not found. Aborting.])
 	  	fi
 	fi
-	LIBS="$LIBS -L$libiconv_dir/lib -R$libiconv_dir/lib -liconv"
+	LIBS="$LIBS -liconv"
 	AC_CHECK_FUNCS(iconv_open)
 fi
 
@@ -378,7 +386,7 @@ if test "$libradius_dir" != "no"; then
 	  	fi
 	fi
 	AC_DEFINE([HAVE_LIBRADIUS], [], [Hybrid authentication uses RADIUS])
-	LIBS="$LIBS -L$libradius_dir/lib -R$libradius_dir/lib -lradius"
+	LIBS="$LIBS -lradius"
 	AC_CHECK_FUNCS(rad_create_request)
 fi
 
@@ -404,7 +412,7 @@ if test "$libpam_dir" != "no"; then
 	  	fi
 	fi
 	AC_DEFINE([HAVE_LIBPAM], [], [Hybrid authentication uses PAM])
-	LIBS="$LIBS -L$libpam_dir/lib -R$libpam_dir/lib -lpam"
+	LIBS="$LIBS -lpam"
 	AC_CHECK_FUNCS(pam_start)
 fi
 
@@ -430,7 +438,7 @@ if test "$libldap_dir" != "no"; then
 	  	fi
 	fi
 	AC_DEFINE([HAVE_LIBLDAP], [], [Hybrid authentication uses LDAP])
-	LIBS="$LIBS -L$libldap_dir/lib -R$libldap_dir/lib -lldap"
+	LIBS="$LIBS -lldap"
 
 	saved_CFLAGS=$CFLAGS
 	CFLAGS="$CFLAGS -Wall -Werror"
@@ -645,7 +653,7 @@ yes
 #endif
 ], [kernel_natt="yes"])
 	;;
-freebsd*|netbsd*)
+freebsd*|kfreebsd*|netbsd*)
 # NetBSD case
 # Same check for FreeBSD
 AC_CHECK_MEMBER(struct sadb_x_nat_t_type.sadb_x_nat_t_type_len,
